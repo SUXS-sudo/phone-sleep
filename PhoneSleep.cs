@@ -42,7 +42,12 @@ class PairingRecord {
   string[] p=Encoding.UTF8.GetString(ProtectedData.Unprotect(encrypted,null,DataProtectionScope.CurrentUser)).Split('\n');Guid id;
   if(p.Length<2||!Guid.TryParse(p[0],out id)||p[1].Length!=32)throw new InvalidDataException("无效配对信息");
   var record=new PairingRecord{Id=p[0],Key=Protocol.Unhex(p[1])};IPAddress ip;int port;
-  if(p.Length>=5&&IPAddress.TryParse(p[2],out ip)&&int.TryParse(p[3],out port)&&port==47652)record.Endpoint=new Device{Id=p[0],Name=Encoding.UTF8.GetString(Convert.FromBase64String(p[4])),Address=ip,Port=port};
+  // 带地址段的记录必须是可信端点：这里以前校验不过就静默丢掉地址，界面会一直停在「正在重连」，
+  // 用户看不出配对其实已经失效。现在直接判为无效记录，让上层提示重新配对。
+  if(p.Length>=5){
+   if(!IPAddress.TryParse(p[2],out ip)||!int.TryParse(p[3],out port)||port!=47652)throw new InvalidDataException("无效配对信息");
+   record.Endpoint=new Device{Id=p[0],Name=Encoding.UTF8.GetString(Convert.FromBase64String(p[4])),Address=ip,Port=port};
+  }
   return record;
  }
  public byte[] Encode(){

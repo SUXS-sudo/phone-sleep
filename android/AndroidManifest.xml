@@ -1,4 +1,4 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="cn.local.phonesleep" android:versionCode="7" android:versionName="1.6">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="cn.local.phonesleep" android:versionCode="8" android:versionName="1.7">
  <uses-sdk android:minSdkVersion="28" android:targetSdkVersion="34"/>
  <uses-permission android:name="android.permission.INTERNET"/>
  <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -9,7 +9,26 @@
  <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
  <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
  <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
- <queries><package android:name="com.vivo.permissionmanager"/><package android:name="com.iqoo.secure"/><package android:name="com.vivo.abe"/><package android:name="com.android.settings"/></queries>
+ <!--
+  Android 11 起查询其他应用需要可见性声明，否则 resolveActivity 一律返回 null，
+  「入口是否可用」的检查会全部失败。这里把各品牌候选设置页所属的包显式列出。
+ -->
+ <queries>
+  <package android:name="com.android.settings"/>
+  <package android:name="com.vivo.permissionmanager"/>
+  <package android:name="com.iqoo.secure"/>
+  <package android:name="com.vivo.abe"/>
+  <package android:name="com.miui.securitycenter"/>
+  <package android:name="com.miui.powerkeeper"/>
+  <package android:name="com.coloros.oppoguardelf"/>
+  <package android:name="com.oplus.battery"/>
+  <package android:name="com.coloros.safecenter"/>
+  <package android:name="com.oplus.safecenter"/>
+  <package android:name="com.oppo.safe"/>
+  <package android:name="com.oneplus.security"/>
+  <package android:name="com.huawei.systemmanager"/>
+  <package android:name="com.hihonor.systemmanager"/>
+ </queries>
  <application android:label="一键息屏" android:icon="@drawable/app_icon" android:theme="@android:style/Theme.Material.Light.NoActionBar" android:allowBackup="false" android:supportsRtl="true">
   <activity android:name=".MainActivity" android:exported="true"><intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter></activity>
   <activity android:name=".BackgroundSetupActivity" android:exported="false"/>
