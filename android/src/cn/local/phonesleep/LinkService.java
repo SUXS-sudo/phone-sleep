@@ -1,6 +1,5 @@
 package cn.local.phonesleep;
 import android.app.*;
-import android.app.admin.DevicePolicyManager;
 import android.content.*;
 import android.net.wifi.WifiManager;
 import android.os.*;
@@ -47,10 +46,10 @@ public class LinkService extends Service {
   byte[] expected=m.doFinal((p[0]+"\n"+p[1]+"\n"+p[2]+"\n"+p[3]).getBytes("UTF-8"));if(!MessageDigest.isEqual(expected,unhex(p[4])))return "DENIED";
   synchronized(seen){if(seen.contains(p[1]))return "REPLAY";seen.add(p[1]);if(seen.size()>512)seen.remove(seen.iterator().next());}
   if(p[3].equals("PING"))return canLock()?"READY":"NO_PERMISSION";
-  final CountDownLatch latch=new CountDownLatch(1);final boolean[] success={false};new Handler(Looper.getMainLooper()).post(()->{try{if(SleepAccess.instance!=null){success[0]=SleepAccess.instance.performGlobalAction(android.accessibilityservice.AccessibilityService.GLOBAL_ACTION_LOCK_SCREEN);}else{DevicePolicyManager d=(DevicePolicyManager)getSystemService(DEVICE_POLICY_SERVICE);if(d.isAdminActive(new ComponentName(this,SleepAdmin.class))){d.lockNow();success[0]=true;}}}catch(Exception ignored){}finally{latch.countDown();}});
+  final CountDownLatch latch=new CountDownLatch(1);final boolean[] success={false};new Handler(Looper.getMainLooper()).post(()->{try{if(SleepAccess.instance!=null)success[0]=SleepAccess.instance.performGlobalAction(android.accessibilityservice.AccessibilityService.GLOBAL_ACTION_LOCK_SCREEN);}catch(Exception ignored){}finally{latch.countDown();}});
   latch.await(1500,TimeUnit.MILLISECONDS);return success[0]?"OK":"NO_PERMISSION";
  }
- boolean canLock(){return SleepAccess.instance!=null||((DevicePolicyManager)getSystemService(DEVICE_POLICY_SERVICE)).isAdminActive(new ComponentName(this,SleepAdmin.class));}
+ boolean canLock(){return SleepAccess.instance!=null;}
  void handle(Socket s){try{String request=line(s.getInputStream());String result=authenticate(request);String[] parts=request.split("\\|",-1);String nonce=parts.length>1?parts[1]:"";Mac m=Mac.getInstance("HmacSHA256");m.init(new SecretKeySpec(unhex(getSharedPreferences("link",0).getString("key","")),"HmacSHA256"));String sig=MainActivity.hex(m.doFinal((nonce+"\n"+result).getBytes("UTF-8")));s.getOutputStream().write((result+"|"+sig+"\n").getBytes("UTF-8"));s.getOutputStream().flush();}catch(Exception ignored){}finally{try{s.close();}catch(Exception ignored){}}}
  public void onDestroy(){active=false;running=false;discoveryReady=false;commandsReady=false;if(udp!=null)udp.close();try{if(tcp!=null)tcp.close();}catch(Exception ignored){}if(clients!=null)clients.shutdownNow();if(discoveryThread!=null)discoveryThread.interrupt();if(commandThread!=null)commandThread.interrupt();if(wifi!=null&&wifi.isHeld())wifi.release();super.onDestroy();}
 }

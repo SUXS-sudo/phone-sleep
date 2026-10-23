@@ -1,4 +1,4 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="cn.local.phonesleep" android:versionCode="6" android:versionName="1.5">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="cn.local.phonesleep" android:versionCode="7" android:versionName="1.6">
  <uses-sdk android:minSdkVersion="28" android:targetSdkVersion="34"/>
  <uses-permission android:name="android.permission.INTERNET"/>
  <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -18,7 +18,7 @@
    <intent-filter><action android:name="android.accessibilityservice.AccessibilityService"/></intent-filter>
    <meta-data android:name="android.accessibilityservice" android:resource="@xml/access"/>
   </service>
-  <receiver android:name=".SleepAdmin" android:label="一键息屏：备用息屏权限" android:exported="true" android:permission="android.permission.BIND_DEVICE_ADMIN">
+  <receiver android:name=".SleepAdmin" android:label="一键息屏：旧版授权（请取消）" android:exported="true" android:permission="android.permission.BIND_DEVICE_ADMIN">
    <meta-data android:name="android.app.device_admin" android:resource="@xml/admin"/>
    <intent-filter><action android:name="android.app.action.DEVICE_ADMIN_ENABLED"/></intent-filter>
   </receiver>
