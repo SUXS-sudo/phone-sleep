@@ -1,7 +1,8 @@
 ﻿param(
     [switch]$AndroidOnly,
     [string]$JdkHome = $env:JAVA_HOME,
-    [string]$AndroidSdk = $env:ANDROID_HOME
+    [string]$AndroidSdk = $env:ANDROID_HOME,
+    [string]$KeystorePath = ''
 )
 $ErrorActionPreference='Stop'
 if (-not $JdkHome) {
@@ -37,11 +38,12 @@ Copy-Item "$build\resources.apk" "$build\unsigned.apk" -Force
 if($LASTEXITCODE){throw 'apk assembly failed'}
 & "$tools\zipalign.exe" -f 4 "$build\unsigned.apk" "$build\aligned.apk"
 if($LASTEXITCODE){throw 'zipalign failed'}
-if(-not(Test-Path "$build\signing.jks")){
- & "$jdk\bin\keytool.exe" -genkeypair -keystore "$build\signing.jks" -storepass local-build-only -keypass local-build-only -alias phonesleep -keyalg RSA -keysize 2048 -validity 10000 -dname 'CN=Phone Sleep Local Build' -storetype JKS
+if(-not $KeystorePath){$KeystorePath=Join-Path $build 'signing.jks'}
+if(-not(Test-Path -LiteralPath $KeystorePath)){
+ & "$jdk\bin\keytool.exe" -genkeypair -keystore $KeystorePath -storepass local-build-only -keypass local-build-only -alias phonesleep -keyalg RSA -keysize 2048 -validity 10000 -dname 'CN=Phone Sleep Local Build' -storetype JKS
  if($LASTEXITCODE){throw 'keytool failed'}
 }
-& "$tools\apksigner.bat" sign --ks "$build\signing.jks" --ks-pass pass:local-build-only --key-pass pass:local-build-only --ks-key-alias phonesleep --out "$out\一键息屏.apk" "$build\aligned.apk"
+& "$tools\apksigner.bat" sign --ks $KeystorePath --ks-pass pass:local-build-only --key-pass pass:local-build-only --ks-key-alias phonesleep --out "$out\一键息屏.apk" "$build\aligned.apk"
 if($LASTEXITCODE){throw 'signing failed'}
 & "$tools\apksigner.bat" verify "$out\一键息屏.apk"
 if($LASTEXITCODE){throw 'signature verification failed'}

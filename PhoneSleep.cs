@@ -13,7 +13,7 @@ using System.Threading;
 using System.Windows.Forms;
 
 class Device {
- public string Id,Name; public IPAddress Address; public int Port; public DateTime Seen;
+ public string Id,Name; public IPAddress Address; public int Port; public DateTime Seen,Verified;
  public override string ToString(){return Name+"  ("+Address+")";}
 }
 class Protocol {
@@ -27,13 +27,28 @@ class Protocol {
   using(var client=new TcpClient()){
    var connect=client.BeginConnect(d.Address,d.Port,null,null);
    using(connect.AsyncWaitHandle){if(!connect.AsyncWaitHandle.WaitOne(1200))throw new IOException("手机连接超时");client.EndConnect(connect);}
-   client.ReceiveTimeout=2200;client.SendTimeout=1200;
+   client.ReceiveTimeout=2200;client.SendTimeout=1200;client.NoDelay=true;
    var stream=client.GetStream();byte[] b=Encoding.UTF8.GetBytes(request);stream.Write(b,0,b.Length);
    string response;using(var reader=new StreamReader(stream,Encoding.UTF8))response=reader.ReadLine();
    if(response==null||response.Length>256)throw new IOException("手机未返回有效结果");string[] parts=response.Split('|');
-   if(parts.Length!=2||!String.Equals(parts[1],Sign(key,nonce+"\n"+parts[0]),StringComparison.Ordinal))throw new IOException("连接码不正确，或手机已重置配对");
+   if(parts.Length!=2||!String.Equals(parts[1],Sign(key,nonce+"\n"+parts[0]),StringComparison.Ordinal))throw new InvalidDataException("连接码不正确，或手机已重置配对");
    return parts[0];
   }
+ }
+}
+class PairingRecord {
+ public string Id;public byte[] Key;public Device Endpoint;
+ public static PairingRecord Decode(byte[] encrypted){
+  string[] p=Encoding.UTF8.GetString(ProtectedData.Unprotect(encrypted,null,DataProtectionScope.CurrentUser)).Split('\n');Guid id;
+  if(p.Length<2||!Guid.TryParse(p[0],out id)||p[1].Length!=32)throw new InvalidDataException("无效配对信息");
+  var record=new PairingRecord{Id=p[0],Key=Protocol.Unhex(p[1])};IPAddress ip;int port;
+  if(p.Length>=5&&IPAddress.TryParse(p[2],out ip)&&int.TryParse(p[3],out port)&&port==47652)record.Endpoint=new Device{Id=p[0],Name=Encoding.UTF8.GetString(Convert.FromBase64String(p[4])),Address=ip,Port=port};
+  return record;
+ }
+ public byte[] Encode(){
+  string text=Id+"\n"+Protocol.Hex(Key);
+  if(Endpoint!=null)text+="\n"+Endpoint.Address+"\n"+Endpoint.Port+"\n"+Convert.ToBase64String(Encoding.UTF8.GetBytes(Endpoint.Name??"我的手机"));
+  return ProtectedData.Protect(Encoding.UTF8.GetBytes(text),null,DataProtectionScope.CurrentUser);
  }
 }
 class Hotkey {

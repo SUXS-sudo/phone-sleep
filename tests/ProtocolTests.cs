@@ -23,7 +23,7 @@ class ProtocolTests {
   var listener=new TcpListener(IPAddress.Loopback,0);listener.Start();Exception error=null;
   var d=new Device{Id=Guid.NewGuid().ToString(),Address=IPAddress.Loopback,Port=((IPEndPoint)listener.LocalEndpoint).Port};
   var thread=new Thread(()=>{try{using(var c=listener.AcceptTcpClient()){var s=c.GetStream();var reader=new StreamReader(s,Encoding.UTF8);string[] p=reader.ReadLine().Split('|');Assert(p.Length==5&&p[0]==d.Id&&p[3]=="PING","request framing");Assert(p[4]==Protocol.Sign(key,p[0]+"\n"+p[1]+"\n"+p[2]+"\n"+p[3]),"request authentication");string sig=forge?new string('0',64):Protocol.Sign(key,p[1]+"\nREADY");byte[] result=Encoding.UTF8.GetBytes("READY|"+sig+"\n");s.Write(result,0,result.Length);}}catch(Exception e){error=e;}finally{listener.Stop();}});thread.Start();
-  if(forge){bool rejected=false;try{Protocol.Send(d,key,"PING");}catch(IOException){rejected=true;}Assert(rejected,"forged server response rejected");}
+  if(forge){bool rejected=false;try{Protocol.Send(d,key,"PING");}catch(InvalidDataException){rejected=true;}Assert(rejected,"forged server response rejected");}
   else Assert(Protocol.Send(d,key,"PING")=="READY","authenticated request and response");
   thread.Join();if(error!=null)throw error;
  }
