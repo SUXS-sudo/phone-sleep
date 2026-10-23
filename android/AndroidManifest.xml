@@ -1,4 +1,4 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="cn.local.phonesleep" android:versionCode="5" android:versionName="1.4">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="cn.local.phonesleep" android:versionCode="6" android:versionName="1.5">
  <uses-sdk android:minSdkVersion="28" android:targetSdkVersion="34"/>
  <uses-permission android:name="android.permission.INTERNET"/>
  <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -9,8 +9,10 @@
  <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
  <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
  <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
+ <queries><package android:name="com.vivo.permissionmanager"/><package android:name="com.iqoo.secure"/><package android:name="com.vivo.abe"/><package android:name="com.android.settings"/></queries>
  <application android:label="一键息屏" android:icon="@drawable/app_icon" android:theme="@android:style/Theme.Material.Light.NoActionBar" android:allowBackup="false" android:supportsRtl="true">
   <activity android:name=".MainActivity" android:exported="true"><intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter></activity>
+  <activity android:name=".BackgroundSetupActivity" android:exported="false"/>
   <service android:name=".LinkService" android:exported="false" android:foregroundServiceType="connectedDevice"/>
   <service android:name=".SleepAccess" android:label="一键息屏：息屏权限" android:exported="true" android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
    <intent-filter><action android:name="android.accessibilityservice.AccessibilityService"/></intent-filter>

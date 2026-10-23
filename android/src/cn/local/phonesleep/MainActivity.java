@@ -46,7 +46,7 @@ public class MainActivity extends Activity {
   Button background=button("vivo 后台运行指引",false,()->backgroundGuide());addButton(root,background);gap(root,12);Button more=button("更多设置",false,()->more());addButton(root,more);gap(root,20);TextView footer=text("局域网直连 · 无会员 · 无广告\n仅用于息屏，不读取屏幕内容",12,MUTED,false);footer.setGravity(Gravity.CENTER);root.addView(footer);
  }
  void appDetails(){try{startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,android.net.Uri.parse("package:"+getPackageName())));}catch(Exception e){Toast.makeText(this,"请在手机设置中打开本应用的信息页",0).show();}}
- void backgroundGuide(){new AlertDialog.Builder(this).setTitle("看视频时也保持连接").setMessage("请为「一键息屏」设置：\n\n1. 设置 → 电池 → 后台耗电管理 / 后台高耗电：允许后台运行。\n2. 在设置中搜索「自启动」，允许本应用自启动。\n3. 打开最近任务，给本应用加锁。\n\n不同 OriginOS 版本名称可能不同。系统的省电豁免不等于已经开启这些 vivo 专属设置。").setPositiveButton("打开应用设置",(d,w)->appDetails()).setNegativeButton("知道了",null).show();}
+ void backgroundGuide(){startActivity(new Intent(this,BackgroundSetupActivity.class));}
  void more(){new AlertDialog.Builder(this).setTitle("更多设置").setItems(new String[]{"无障碍息屏授权","vivo 自启动 / 后台设置","重置连接码"},(dialog,index)->{if(index==0)openAccessibility(false);else if(index==1)backgroundGuide();else new AlertDialog.Builder(this).setTitle("重置连接码？").setMessage("已配对电脑将断开，需要输入新的连接码。").setPositiveButton("重置",(d,w)->{byte[] k=new byte[16];new SecureRandom().nextBytes(k);prefs.edit().putString("key",hex(k)).apply();code.setText("已重置，请重新显示连接码");}).setNegativeButton("取消",null).show();}).show();}
  boolean canLock(){
   if(SleepAccess.instance!=null||((DevicePolicyManager)getSystemService(DEVICE_POLICY_SERVICE)).isAdminActive(new ComponentName(this,SleepAdmin.class)))return true;
@@ -61,7 +61,7 @@ public class MainActivity extends Activity {
   if(!flowActive||flowWaiting||isFinishing())return;
   int step=AuthorizationPlan.next(canLock(),notificationsReady(),batteryReady(),attempted);attempted|=step;
   if(step==AuthorizationPlan.STOP){flowActive=false;authorizationHint.setText("息屏权限尚未确认。本次已停止，点击「开始授权」可重试。也可在更多设置中选择无障碍授权。");refresh();return;}
-  if(step==AuthorizationPlan.DONE){flowActive=false;startConnection();authorizationHint.setText(notificationsReady()&&batteryReady()?"系统授权已完成，连接已开启。vivo 如限制后台运行，可到更多设置检查自启动。":"连接已开启。部分通知或后台选项未确认，点击「检查授权」可再次检查。");refresh();return;}
+  if(step==AuthorizationPlan.DONE){flowActive=false;startConnection();authorizationHint.setText(notificationsReady()&&batteryReady()?"系统授权已完成，连接已开启。":"连接已开启。部分通知或后台选项未确认，可稍后检查。");refresh();if(BackgroundSetupActivity.isVivo()&&!BackgroundSetupActivity.complete(this))handler.postDelayed(()->{if(!isFinishing())startActivity(new Intent(this,BackgroundSetupActivity.class).putExtra("autoStart",true));},500);return;}
   flowWaiting=true;refresh();
   if(step==AuthorizationPlan.LOCK){permission.setText("1 / 3 · 请在系统页面确认息屏授权");Intent i=new Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN);i.putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN,new ComponentName(this,SleepAdmin.class));i.putExtra(DevicePolicyManager.EXTRA_ADD_EXPLANATION,"仅申请关闭并锁定屏幕的权限，不读取数据。激活后下次唤醒可能需要输入密码。");try{startActivityForResult(i,210);}catch(Exception e){openAccessibility(true);}return;}
   if(step==AuthorizationPlan.NOTIFICATIONS){permission.setText("2 / 3 · 请确认连接通知");try{requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"},211);}catch(Exception e){flowWaiting=false;scheduleAuthorization();}return;}
